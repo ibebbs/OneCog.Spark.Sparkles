@@ -38,10 +38,15 @@ namespace OneCog.Spark.Sparkles.Configuration
             }
         }
 
+        IEnumerable<IIndex> IElasticSearch.Indexes
+        {
+            get { return Indexes; }
+        }
+
         public string Host { get; set; }
 
         public string DefaultIndex { get; set; }
 
-        public IEnumerable<IIndex> Indexes { get; set; }
+        public IEnumerable<Index> Indexes { get; set; }
     }
 }

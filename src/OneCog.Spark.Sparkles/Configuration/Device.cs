@@ -21,6 +21,11 @@ namespace OneCog.Spark.Sparkles.Configuration
 
     public class Device : IDevice
     {
+        IEnumerable<IVariable> IDevice.Variables
+        {
+            get { return Variables; }
+        }
+
         public string Id { get; set; }
 
         public TimeSpan? DefaultInterval { get; set; }
@@ -29,6 +34,6 @@ namespace OneCog.Spark.Sparkles.Configuration
 
         public string DefaultType { get; set; }
 
-        public IEnumerable<IVariable> Variables { get; set; }
+        public IEnumerable<Variable> Variables { get; set; }
     }
 }

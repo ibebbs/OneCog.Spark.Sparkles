@@ -8,19 +8,24 @@ namespace OneCog.Spark.Sparkles.Configuration
 {
     public interface ISparkCore
     {
-        string AccessToken { get; set; }
+        string AccessToken { get; }
 
-        TimeSpan DefaultInterval { get; set; }
+        TimeSpan DefaultInterval { get; }
 
-        string DefaultIndex { get; set; }
+        string DefaultIndex { get; }
 
-        string DefaultType { get; set; }
+        string DefaultType { get; }
 
-        IEnumerable<IDevice> Devices { get; set; }
+        IEnumerable<IDevice> Devices { get; }
     }
 
     public class SparkCore : ISparkCore
     {
+        IEnumerable<IDevice> ISparkCore.Devices
+        {
+            get { return Devices; }
+        }
+
         public string AccessToken { get; set; }
 
         public TimeSpan DefaultInterval { get; set; }
@@ -29,6 +34,6 @@ namespace OneCog.Spark.Sparkles.Configuration
 
         public string DefaultType { get; set; }
 
-        public IEnumerable<IDevice> Devices { get; set; }
+        public IEnumerable<Device> Devices { get; set; }
     }
 }

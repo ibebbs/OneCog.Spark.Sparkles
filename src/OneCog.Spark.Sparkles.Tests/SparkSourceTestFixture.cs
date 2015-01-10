@@ -72,11 +72,9 @@ namespace OneCog.Spark.Sparkles.Tests
             A.CallTo(() => _elasticSearchSettings.Host).Returns("http://localhost:9220");
             A.CallTo(() => _elasticSearchSettings.Indexes).Returns(new[] { _tempIndex, _humidityIndex, _lightIndex });
 
-            _settings = new Configuration.Settings
-            {
-                SparkCore = _sparkCoreSettings,
-                ElasticSearch = _elasticSearchSettings
-            };
+            _settings = A.Fake<Configuration.ISettings>();
+            A.CallTo(() => _settings.SparkCore).Returns(_sparkCoreSettings);
+            A.CallTo(() => _settings.ElasticSearch).Returns(_elasticSearchSettings);
 
             _sparkApi = A.Fake<Io.Spark.IApi>();
             _documentFactory = A.Fake<IDocumentFactory>();

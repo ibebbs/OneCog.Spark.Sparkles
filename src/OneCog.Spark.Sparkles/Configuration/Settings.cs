@@ -8,9 +8,9 @@ namespace OneCog.Spark.Sparkles.Configuration
 {
     public interface ISettings
     {
-        IElasticSearch ElasticSearch { get; set; }
+        IElasticSearch ElasticSearch { get; }
 
-        ISparkCore SparkCore { get; set; }
+        ISparkCore SparkCore { get; }
 
         IIndex GetIndexForVariable(IVariable variable);
     }
@@ -22,8 +22,18 @@ namespace OneCog.Spark.Sparkles.Configuration
             throw new NotImplementedException();
         }
 
-        public IElasticSearch ElasticSearch { get; set; }
+        IElasticSearch ISettings.ElasticSearch
+        {
+            get { return ElasticSearch; }
+        }
 
-        public ISparkCore SparkCore { get; set; }
+        ISparkCore ISettings.SparkCore
+        {
+            get { return SparkCore; }
+        }
+
+        public ElasticSearch ElasticSearch { get; set; }
+
+        public SparkCore SparkCore { get; set; }
     }
 }

@@ -12,7 +12,7 @@ namespace OneCog.Spark.Sparkles
         Fallible<string> Index(string index, string type, string body);
     }
 
-    internal class ElasticClient
+    internal class ElasticClient : IElasticClient
     {
         private readonly IElasticsearchClient _elasticsearchClient;
 
@@ -23,7 +23,7 @@ namespace OneCog.Spark.Sparkles
 
         public Fallible<string> Index(string index, string type, string body)
         {
-            var response = _elasticsearchClient.Index(index, type, body);
+            var response = _elasticsearchClient.Index(index, type, body));
 
             return (response.Success) ? Fallible.Success(response.RequestUrl) : Fallible.Fail<string>(new InvalidOperationException(response.ServerError.Error));
         }
