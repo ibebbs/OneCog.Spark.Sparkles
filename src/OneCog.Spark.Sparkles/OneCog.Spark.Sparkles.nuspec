@@ -13,7 +13,9 @@
     <releaseNotes>Beta</releaseNotes>
   </metadata>
   <files>
-    <file src="bin\$configuration$\*.dll" target="bin" />
-    <file src="bin\$configuration$\*.pdb" target="bin" />
+    <file src="bin\$configuration$\*.exe" target="" />
+    <file src="bin\$configuration$\*.exe.config" target="" />
+    <file src="bin\$configuration$\*.dll" target="" />
+    <file src="bin\$configuration$\*.pdb" target="" />
   </files>
 </package>
