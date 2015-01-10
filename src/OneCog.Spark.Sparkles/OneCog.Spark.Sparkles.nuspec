@@ -1,0 +1,19 @@
+﻿<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>$id$</id>
+    <title>SparklES</title>
+    <version>$version$</version>
+    <authors>Ian Bebbington</authors>
+    <owners>OneCog Solutions Ltd</owners>
+    <licenseUrl>https://github.com/ibebbs/OneCog.Spark.Sparkles/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/ibebbs/OneCog.Spark.Sparkles</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A windows service for logging Spark data to ElasticSearch</description>
+    <releaseNotes>Beta</releaseNotes>
+    <files>
+      <file src="bin\$configuration$\*.dll" target="bin" />
+      <file src="bin\$configuration$\*.pdb" target="bin" />
+    </files>
+  </metadata>
+</package>
