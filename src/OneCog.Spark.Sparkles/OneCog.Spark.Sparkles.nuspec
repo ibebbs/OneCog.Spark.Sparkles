@@ -11,9 +11,9 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>A windows service for logging Spark data to ElasticSearch</description>
     <releaseNotes>Beta</releaseNotes>
-    <files>
-      <file src="bin\$configuration$\*.dll" target="bin" />
-      <file src="bin\$configuration$\*.pdb" target="bin" />
-    </files>
   </metadata>
+  <files>
+    <file src="bin\$configuration$\*.dll" target="bin" />
+    <file src="bin\$configuration$\*.pdb" target="bin" />
+  </files>
 </package>
