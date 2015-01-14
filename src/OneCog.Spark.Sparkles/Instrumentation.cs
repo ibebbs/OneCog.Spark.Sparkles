@@ -1,5 +1,6 @@
 ﻿using EventSourceProxy;
 using OneCog.Spark.Sparkles.Configuration;
+using OneCog.Spark.Sparkles.Document;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
@@ -31,8 +32,11 @@ namespace OneCog.Spark.Sparkles
         [Event(2, Message = "IndexedDocument", Level = EventLevel.Informational)]
         void IndexedDocument(IDocument document);
 
-        [Event(3, Message = "IndexingError", Level = EventLevel.Error)]
+        [Event(3, Message = "IndexingError", Level = EventLevel.Warning)]
         void IndexingError(IDocument document, Exception exception);
+
+        [Event(4, Message = "IndexingException", Level = EventLevel.Error)]
+        void IndexingException(Exception exception);
     }
 
     public static class Instrumentation

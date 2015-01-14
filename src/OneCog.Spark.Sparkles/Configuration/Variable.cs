@@ -12,7 +12,7 @@ namespace OneCog.Spark.Sparkles.Configuration
 
         TimeSpan? Interval { get; }
 
-        string Index { get; }
+        string IndexName { get; }
 
         string Type { get; }
 
@@ -25,7 +25,7 @@ namespace OneCog.Spark.Sparkles.Configuration
 
         public TimeSpan? Interval { get; set; }
 
-        public string Index { get; set; }
+        public string IndexName { get; set; }
 
         public string Type { get; set; }
 

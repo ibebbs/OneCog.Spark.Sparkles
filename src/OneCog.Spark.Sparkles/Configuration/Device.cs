@@ -12,7 +12,7 @@ namespace OneCog.Spark.Sparkles.Configuration
 
         TimeSpan? DefaultInterval { get; }
 
-        string DefaultIndex { get; }
+        string DefaultIndexName { get; }
 
         string DefaultType { get; }
 
@@ -30,7 +30,7 @@ namespace OneCog.Spark.Sparkles.Configuration
 
         public TimeSpan? DefaultInterval { get; set; }
 
-        public string DefaultIndex { get; set; }
+        public string DefaultIndexName { get; set; }
 
         public string DefaultType { get; set; }
 

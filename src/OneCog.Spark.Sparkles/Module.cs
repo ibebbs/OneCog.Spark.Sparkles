@@ -4,7 +4,6 @@ using EventSourceProxy;
 using Ninject;
 using Ninject.Activation;
 using Ninject.Modules;
-using OneCog.Io.Spark;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,15 +24,6 @@ namespace OneCog.Spark.Sparkles
             return client;
         }
 
-        private IApiClient BuildApiClient(IContext context)
-        {
-            Configuration.ISettings settings = context.Kernel.Get<Configuration.ISettings>();
-
-            ApiClient client = new ApiClient(settings.SparkCore.AccessToken);
-
-            return client;
-        }
-
         private Configuration.ISettings GetConfigurationSettings(IContext context)
         {
             Configuration.IProvider provider = context.Kernel.Get<Configuration.IProvider>();
@@ -43,16 +33,12 @@ namespace OneCog.Spark.Sparkles
 
         public override void Load()
         {
+            Bind<IClock>().To<Clock>().InSingletonScope();
+
             Bind<Configuration.IProvider>().To<Configuration.Provider>().InSingletonScope();
             Bind<Configuration.ISettings>().ToMethod(GetConfigurationSettings).InSingletonScope();
 
-            Bind<IDocumentFactory>().To<DocumentFactory>().InSingletonScope();
-
             Bind<IElasticsearchClient>().ToMethod(BuildElasticSearchClient);
-            Bind<IElasticClient>().To<ElasticClient>();
-
-            Bind<IApiClient>().ToMethod(BuildApiClient);
-            Bind<IApi>().To<Api>();
 
             Bind<Service>().ToSelf();
             Bind<IService>().ToMethod(context => EventSourceProxy.TracingProxy.Create<IService>(context.Kernel.Get<Service>()));

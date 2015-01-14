@@ -1,6 +1,7 @@
 ﻿using FakeItEasy;
 using NUnit.Framework;
 using OneCog.Io.Spark;
+using OneCog.Spark.Sparkles.Document;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +18,7 @@ namespace OneCog.Spark.Sparkles.Tests
     {
         private Configuration.ISettings _settings;
         private Io.Spark.IApi _sparkApi;
-        private IDocumentFactory _documentFactory;
+        private Document.IFactory _documentFactory;
         private SparkSource _subject;
         private Configuration.ISparkCore _sparkCoreSettings;
         private static Configuration.Device _deviceA;
@@ -33,27 +34,27 @@ namespace OneCog.Spark.Sparkles.Tests
             _deviceA = new Configuration.Device
             {
                 Id = "DeviceA",
-                DefaultIndex = "DeviceAIndex",
+                DefaultIndexName = "DeviceAIndex",
                 DefaultInterval = TimeSpan.FromSeconds(75),
                 DefaultType = "DeviceAType",
                 Variables = new[] {
-                    new Configuration.Variable { Name = "temp", Index = "tempIndex", Interval = TimeSpan.FromSeconds(10), Type = "tempType", OmitDuplicateReadings = true },
-                    new Configuration.Variable { Name = "humidity", Index = "humidityIndex", Interval = TimeSpan.FromSeconds(20), Type = "humidityType", OmitDuplicateReadings = true }
+                    new Configuration.Variable { Name = "temp", IndexName = "tempIndex", Interval = TimeSpan.FromSeconds(10), Type = "tempType", OmitDuplicateReadings = true },
+                    new Configuration.Variable { Name = "humidity", IndexName = "humidityIndex", Interval = TimeSpan.FromSeconds(20), Type = "humidityType", OmitDuplicateReadings = true }
                 }
             };
 
             _deviceB = new Configuration.Device
             {
                 Id = "DeviceB",
-                DefaultIndex = "DeviceBIndex",
+                DefaultIndexName = "DeviceBIndex",
                 DefaultInterval = TimeSpan.FromSeconds(75),
                 DefaultType = "DeviceBType",
                 Variables = new[] {
-                    new Configuration.Variable { Name = "light", Index = "lightIndex", Interval = TimeSpan.FromSeconds(30), Type = "lightType", OmitDuplicateReadings = true }
+                    new Configuration.Variable { Name = "light", IndexName = "lightIndex", Interval = TimeSpan.FromSeconds(30), Type = "lightType", OmitDuplicateReadings = true }
                 }
             };
 
-            _tempIndex = new Configuration.Index { Name = "tempIndex", AppendDate = true, DateFormat= "yyy-MM-dd" };
+            _tempIndex = new Configuration.Index { Name = "tempIndex", AppendDate = true, DateFormat = "yyy-MM-dd" };
             _lightIndex = new Configuration.Index { Name = "lightIndex", AppendDate = true };
             _humidityIndex = new Configuration.Index { Name = "humidityIndex", AppendDate = false };
         }
@@ -63,7 +64,7 @@ namespace OneCog.Spark.Sparkles.Tests
         {
             _sparkCoreSettings = A.Fake<Configuration.ISparkCore>();
             A.CallTo(() => _sparkCoreSettings.AccessToken).Returns("0123456789abcdef123456");
-            A.CallTo(() => _sparkCoreSettings.DefaultIndex).Returns("CoreIndex");
+            A.CallTo(() => _sparkCoreSettings.DefaultIndexName).Returns("CoreIndex");
             A.CallTo(() => _sparkCoreSettings.DefaultInterval).Returns(TimeSpan.FromSeconds(100));
             A.CallTo(() => _sparkCoreSettings.DefaultType).Returns("CoreType");
             A.CallTo(() => _sparkCoreSettings.Devices).Returns(new[] { _deviceA, _deviceB });
@@ -77,7 +78,7 @@ namespace OneCog.Spark.Sparkles.Tests
             A.CallTo(() => _settings.ElasticSearch).Returns(_elasticSearchSettings);
 
             _sparkApi = A.Fake<Io.Spark.IApi>();
-            _documentFactory = A.Fake<IDocumentFactory>();
+            _documentFactory = A.Fake<Document.IFactory>();
 
             _subject = new SparkSource(_settings, _sparkApi, _documentFactory);
         }

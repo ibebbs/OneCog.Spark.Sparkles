@@ -1,5 +1,6 @@
 ﻿using Elasticsearch.Net;
 using Elasticsearch.Net.Connection;
+using OneCog.Spark.Sparkles.Document;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,16 +19,45 @@ namespace OneCog.Spark.Sparkles
 
     internal class ElasticSink : IElasticSink
     {
+        private class IndexedDocument
+        {
+            public IDocument Document { get; set; }
+            public string Index { get; set; }
+        }
+
+        private readonly IElasticClient _elasticClient;
+        private readonly IClock _clock;
+
+        private readonly IDictionary<string, Func<string>> _indexers;
+
         private Subject<IDocument> _subject;
         private IDisposable _subscription;
-        private IElasticClient _elasticClient;
 
-        public ElasticSink(IElasticClient elasticClient)
+        public ElasticSink(Configuration.ISettings configuration, IElasticClient elasticClient, IClock clock)
         {
             _subject = new Subject<IDocument>();
             _elasticClient = elasticClient;
+            _clock = clock;
 
+            _indexers = BuildElasticSearchIndexerDictionary(configuration.ElasticSearch);
             _subscription = BuildElasticSearchWriteSubscription();
+        }
+
+        private Func<string> GetIndexer(Configuration.IIndex index)
+        {
+            if (!index.AppendDate)
+            {
+                return () => index.Name;
+            }
+            else
+            {
+                return () => string.Format("{0}-{1}", index.Name, _clock.UtcNow.ToString(index.DateFormat));
+            }
+        }
+
+        private IDictionary<string, Func<string>> BuildElasticSearchIndexerDictionary(Configuration.IElasticSearch configuration)
+        {
+            return configuration.Indexes.Select(index => new { Name = index.Name, Indexer = GetIndexer(index) }).ToDictionary(value => value.Name, value => value.Indexer);
         }
 
         public void Dispose()
@@ -47,14 +77,18 @@ namespace OneCog.Spark.Sparkles
 
         private IDisposable BuildElasticSearchWriteSubscription()
         {
-            var indexer = _subject
+            var indexSource = _subject
                 .Do(document => Instrumentation.ElasticSearch.IndexingDocument(document))
-                .Select(document => new { Document = document, Result = _elasticClient.Index(document.Index, document.Type, document.Body) })
+                .Select(document => new IndexedDocument { Document = document, Index = _indexers[document.IndexName]() });
+
+            var handledSource = indexSource
+                .Catch<IndexedDocument, Exception>(exception => { Instrumentation.ElasticSearch.IndexingException(exception); return indexSource; })
+                .Select(indexedDocument => new { Document = indexedDocument.Document, Result = _elasticClient.Index(indexedDocument.Index, indexedDocument.Document.Type, indexedDocument.Document.Body) })
                 .Publish()
                 .RefCount();
 
-            IDisposable successHandler = indexer.Where(indexing => indexing.Result.Success).Subscribe(indexing => Instrumentation.ElasticSearch.IndexedDocument(indexing.Document));
-            IDisposable errorHandler = indexer.Where(indexing => !indexing.Result.Success).Subscribe(indexing => Instrumentation.ElasticSearch.IndexingError(indexing.Document, indexing.Result.Error));
+            IDisposable successHandler = handledSource.Where(indexing => indexing.Result.Success).Subscribe(indexing => Instrumentation.ElasticSearch.IndexedDocument(indexing.Document));
+            IDisposable errorHandler = handledSource.Where(indexing => !indexing.Result.Success).Subscribe(indexing => Instrumentation.ElasticSearch.IndexingError(indexing.Document, indexing.Result.Error));
 
             return new CompositeDisposable(successHandler, errorHandler);
         }

@@ -94,6 +94,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Clock.cs" />
     <Compile Include="ConfigurationExtensions.cs" />
     <Compile Include="Configuration\Device.cs" />
     <Compile Include="Configuration\ElasticSearch.cs" />
@@ -102,8 +103,9 @@
     <Compile Include="Configuration\Settings.cs" />
     <Compile Include="Configuration\SparkCore.cs" />
     <Compile Include="Configuration\Variable.cs" />
-    <Compile Include="Document.cs" />
-    <Compile Include="DocumentFactory.cs" />
+    <Compile Include="Document\Document.cs" />
+    <Compile Include="Document\Factory.cs" />
+    <Compile Include="Document\ForVariable.cs" />
     <Compile Include="ElasticClient.cs" />
     <Compile Include="ElasticSink.cs" />
     <Compile Include="Fallible.cs" />
