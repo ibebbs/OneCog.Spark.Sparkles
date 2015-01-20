@@ -40,7 +40,12 @@ namespace OneCog.Spark.Sparkles.Configuration
 
         IEnumerable<IIndex> IElasticSearch.Indexes
         {
-            get { return Indexes; }
+            get { return Indexes ?? Enumerable.Empty<IIndex>(); }
+        }
+
+        string IElasticSearch.Host
+        {
+            get { return Host ?? "http://localhost:9200"; }
         }
 
         public string Host { get; set; }

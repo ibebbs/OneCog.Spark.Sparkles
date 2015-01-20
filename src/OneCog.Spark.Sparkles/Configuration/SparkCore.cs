@@ -23,7 +23,7 @@ namespace OneCog.Spark.Sparkles.Configuration
     {
         IEnumerable<IDevice> ISparkCore.Devices
         {
-            get { return Devices; }
+            get { return Devices ?? Enumerable.Empty<IDevice>(); }
         }
 
         public string AccessToken { get; set; }

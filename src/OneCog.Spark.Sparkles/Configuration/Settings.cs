@@ -11,16 +11,10 @@ namespace OneCog.Spark.Sparkles.Configuration
         IElasticSearch ElasticSearch { get; }
 
         ISparkCore SparkCore { get; }
-
-        IIndex GetIndexForVariable(IVariable variable);
     }
 
     public class Settings : ISettings
     {
-        public IIndex GetIndexForVariable(IVariable variable)
-        {
-            throw new NotImplementedException();
-        }
 
         IElasticSearch ISettings.ElasticSearch
         {

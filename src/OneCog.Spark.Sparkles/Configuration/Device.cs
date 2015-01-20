@@ -23,7 +23,7 @@ namespace OneCog.Spark.Sparkles.Configuration
     {
         IEnumerable<IVariable> IDevice.Variables
         {
-            get { return Variables; }
+            get { return Variables ?? Enumerable.Empty<IVariable>(); }
         }
 
         public string Id { get; set; }
