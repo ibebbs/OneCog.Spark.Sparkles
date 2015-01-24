@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Topshelf;
+using OneCog.Spark.Sparkles.Configuration;
 
 namespace OneCog.Spark.Sparkles
 {
@@ -14,20 +15,25 @@ namespace OneCog.Spark.Sparkles
         {
             IKernel kernel = new StandardKernel(new Module());
 
-            HostFactory.Run(x =>                                 
+            if (kernel.Get<Configuration.ISettings>().Validate())
             {
-                x.Service<IService>(s =>                        
-                {
-                    s.ConstructUsing(name => kernel.Get<IService>());
-                    s.WhenStarted(tc => tc.Start());             
-                    s.WhenStopped(tc => tc.Stop());               
-                });
-                x.RunAsLocalSystem();                            
+                HostFactory.Run(
+                    x =>
+                    {
+                        x.Service<IService>(s =>
+                        {
+                            s.ConstructUsing(name => kernel.Get<IService>());
+                            s.WhenStarted(tc => tc.Start());
+                            s.WhenStopped(tc => tc.Stop());
+                        });
+                        x.RunAsLocalSystem();
 
-                x.SetDescription("Service for reading values from SparkCore cloud API and writing the values to ElasticSearch");
-                x.SetDisplayName("SparklES");                       
-                x.SetServiceName("SparklES");                       
-            });    
+                        x.SetDescription("Service for reading values from SparkCore cloud API and writing the values to ElasticSearch");
+                        x.SetDisplayName("SparklES");
+                        x.SetServiceName("SparklES");
+                    }
+                );
+            };
         }
     }
 }

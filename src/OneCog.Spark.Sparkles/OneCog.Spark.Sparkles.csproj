@@ -48,6 +48,9 @@
     <Reference Include="Flexo">
       <HintPath>..\packages\flexo.1.0.0.18\lib\Flexo.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Practices.EnterpriseLibrary.SemanticLogging">
+      <HintPath>..\packages\EnterpriseLibrary.SemanticLogging.2.0.1406.1\lib\net45\Microsoft.Practices.EnterpriseLibrary.SemanticLogging.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Newtonsoft.Json.6.0.7\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -102,7 +105,9 @@
     <Compile Include="Configuration\Provider.cs" />
     <Compile Include="Configuration\Settings.cs" />
     <Compile Include="Configuration\SparkCore.cs" />
+    <Compile Include="Configuration\Validator.cs" />
     <Compile Include="Configuration\Variable.cs" />
+    <Compile Include="Default.cs" />
     <Compile Include="Document\Document.cs" />
     <Compile Include="Document\Factory.cs" />
     <Compile Include="Document\ForVariable.cs" />
