@@ -1,4 +1,5 @@
 ﻿using FakeItEasy;
+using Microsoft.Reactive.Testing;
 using NUnit.Framework;
 using OneCog.Io.Spark;
 using OneCog.Spark.Sparkles.Document;
@@ -16,17 +17,20 @@ namespace OneCog.Spark.Sparkles.Tests
     [TestFixture]
     public class SparkSourceTestFixture
     {
-        private Configuration.ISettings _settings;
-        private Io.Spark.IApi _sparkApi;
-        private Document.IFactory _documentFactory;
-        private SparkSource _subject;
-        private Configuration.ISparkCore _sparkCoreSettings;
         private static Configuration.Device _deviceA;
         private static Configuration.Device _deviceB;
-        private Configuration.IElasticSearch _elasticSearchSettings;
         private static Configuration.Index _tempIndex;
         private static Configuration.Index _lightIndex;
         private static Configuration.Index _humidityIndex;
+
+        private Configuration.ISettings _settings;
+        private Configuration.IElasticSearch _elasticSearchSettings;
+        private Configuration.ISparkCore _sparkCoreSettings;
+        private Io.Spark.IApi _sparkApi;
+        private Document.IFactory _documentFactory;
+        private ISchedulerProvider _schedulerProvider;
+        private TestScheduler _testScheduler;
+        private SparkSource _subject;
 
         [TestFixtureSetUp]
         public static void TestSetup()
@@ -79,8 +83,11 @@ namespace OneCog.Spark.Sparkles.Tests
 
             _sparkApi = A.Fake<Io.Spark.IApi>();
             _documentFactory = A.Fake<Document.IFactory>();
+            _schedulerProvider = A.Fake<ISchedulerProvider>();
+            _testScheduler = new TestScheduler();
+            A.CallTo(() => _schedulerProvider.AsyncScheduler).Returns(_testScheduler);
 
-            _subject = new SparkSource(_settings, _sparkApi, _documentFactory);
+            _subject = new SparkSource(_settings, _sparkApi, _documentFactory, _schedulerProvider);
         }
 
         [Test]
@@ -131,6 +138,81 @@ namespace OneCog.Spark.Sparkles.Tests
             tempObservable.OnNext(variable);
 
             Assert.That(documents.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ShouldResubscribeAfterAnErrorObservingVariable()
+        {
+            IVariable variable = A.Fake<IVariable>();
+            List<IDocument> documents = new List<IDocument>();
+            
+            IObserver<IVariable> observer = null;
+            IObservable<IVariable> observable = A.Fake<IObservable<IVariable>>();
+
+            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).Invokes(call => observer = call.GetArgument<IObserver<IVariable>>(0));
+
+            A.CallTo(() => _sparkApi.ObserveVariable("DeviceA", "temp", TimeSpan.FromSeconds(10), null)).Returns(observable);
+
+            _subject.Subscribe(documents.Add);
+
+            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+
+            Assert.That(observer, Is.Not.Null);
+
+            observer.OnNext(variable);
+
+            Assert.That(documents.Count, Is.EqualTo(1));
+
+            observer.OnError(new TimeoutException());
+
+            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Twice);
+
+            Assert.That(observer, Is.Not.Null);
+
+            observer.OnNext(variable);
+
+            Assert.That(documents.Count, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void ShouldResubscribeAfterNotReceivingAnValueAfterFiveTimesTheInterval()
+        {
+            IVariable variable = A.Fake<IVariable>();
+            List<IDocument> documents = new List<IDocument>();
+
+            IObserver<IVariable> observer = null;
+            IObservable<IVariable> observable = A.Fake<IObservable<IVariable>>();
+
+            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).Invokes(call => observer = call.GetArgument<IObserver<IVariable>>(0));
+
+            A.CallTo(() => _sparkApi.ObserveVariable("DeviceA", "temp", TimeSpan.FromSeconds(10), null)).Returns(observable);
+
+            _subject.Subscribe(documents.Add);
+
+            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+
+            Assert.That(observer, Is.Not.Null);
+
+            observer.OnNext(variable);
+
+            Assert.That(documents.Count, Is.EqualTo(1));
+
+            _testScheduler.AdvanceBy(TimeSpan.FromSeconds(10).Ticks);
+            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+            _testScheduler.AdvanceBy(TimeSpan.FromSeconds(10).Ticks);
+            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+            _testScheduler.AdvanceBy(TimeSpan.FromSeconds(10).Ticks);
+            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+            _testScheduler.AdvanceBy(TimeSpan.FromSeconds(10).Ticks);
+            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+            _testScheduler.AdvanceBy(TimeSpan.FromSeconds(10).Ticks);
+            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Twice);
+
+            Assert.That(observer, Is.Not.Null);
+
+            observer.OnNext(variable);
+
+            Assert.That(documents.Count, Is.EqualTo(2));
         }
     }
 }

@@ -25,15 +25,6 @@ namespace OneCog.Spark.Sparkles
             return client;
         }
 
-        private IApiClient BuildApiClient(IContext context)
-        {
-            Configuration.ISettings settings = context.Kernel.Get<Configuration.ISettings>();
-
-            ApiClient client = new ApiClient(settings.SparkCore.AccessToken);
-
-            return client;
-        }
-
         private Configuration.ISettings GetConfigurationSettings(IContext context)
         {
             Configuration.IProvider provider = context.Kernel.Get<Configuration.IProvider>();
@@ -44,6 +35,7 @@ namespace OneCog.Spark.Sparkles
         public override void Load()
         {
             Bind<IClock>().To<Clock>().InSingletonScope();
+            Bind<ISchedulerProvider>().To<SchedulerProvider>().InSingletonScope();
 
             Bind<Configuration.IProvider>().To<Configuration.Provider>().InSingletonScope();
             Bind<Configuration.ISettings>().ToMethod(GetConfigurationSettings).InSingletonScope();
@@ -54,8 +46,6 @@ namespace OneCog.Spark.Sparkles
             Bind<IElasticClient>().To<ElasticClient>();
             Bind<IElasticSink>().To<ElasticSink>();
 
-            Bind<IApiClient>().ToMethod(BuildApiClient);
-            Bind<IApi>().To<Api>();
             Bind<ISparkSource>().To<SparkSource>();
 
             Bind<Service>().ToSelf();

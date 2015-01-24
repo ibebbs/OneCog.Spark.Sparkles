@@ -16,6 +16,7 @@ namespace OneCog.Spark.Sparkles.Tests
         public void ShouldBeAbleToResolveService()
         {
             Configuration.IProvider configurationProvider = A.Fake<Configuration.IProvider>();
+
             A.CallTo(() => configurationProvider.GetSettings()).Returns(
                 new Configuration.Settings
                 {
@@ -23,8 +24,10 @@ namespace OneCog.Spark.Sparkles.Tests
                     SparkCore = new Configuration.SparkCore()
                 }
             );
-            IKernel kernel = new StandardKernel(new Module());
+
+            IKernel kernel = new StandardKernel(new Module(), new Io.Spark.Ninject.Module("TEST"));
             kernel.Rebind<Configuration.IProvider>().ToConstant(configurationProvider);
+
             IService service = kernel.Get<IService>();
 
             Assert.That(service, Is.Not.Null);

@@ -14,9 +14,12 @@ namespace OneCog.Spark.Sparkles
         static void Main(string[] args)
         {
             IKernel kernel = new StandardKernel(new Module());
+            Configuration.ISettings settings = kernel.Get<Configuration.ISettings>();
 
-            if (kernel.Get<Configuration.ISettings>().Validate())
+            if (settings.Validate())
             {
+                kernel.Load(new Io.Spark.Ninject.Module(settings.SparkCore.AccessToken));
+
                 HostFactory.Run(
                     x =>
                     {
