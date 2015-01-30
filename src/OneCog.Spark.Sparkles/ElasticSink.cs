@@ -25,6 +25,11 @@ namespace OneCog.Spark.Sparkles
             public string Index { get; set; }
         }
 
+        private class IndexedDocumentResult : IndexedDocument
+        {
+            public Fallible<string> Result { get; set; }
+        }
+
         private readonly IElasticClient _elasticClient;
         private readonly IClock _clock;
 
@@ -77,13 +82,13 @@ namespace OneCog.Spark.Sparkles
 
         private IDisposable BuildElasticSearchWriteSubscription()
         {
-            var indexSource = _subject
+            IObservable<IndexedDocumentResult> indexSource = _subject
                 .Do(document => Instrumentation.ElasticSearch.IndexingDocument(document))
-                .Select(document => new IndexedDocument { Document = document, Index = _indexers[document.IndexName]() });
+                .Select(document => new IndexedDocument { Document = document, Index = _indexers[document.IndexName]() })
+                .Select(indexedDocument => new IndexedDocumentResult { Document = indexedDocument.Document, Index = indexedDocument.Index, Result = _elasticClient.Index(indexedDocument.Index, indexedDocument.Document.Type, indexedDocument.Document.Body) });
 
             var handledSource = indexSource
-                .Catch<IndexedDocument, Exception>(exception => { Instrumentation.ElasticSearch.IndexingException(exception); return indexSource; })
-                .Select(indexedDocument => new { Document = indexedDocument.Document, Result = _elasticClient.Index(indexedDocument.Index, indexedDocument.Document.Type, indexedDocument.Document.Body) })
+                .Catch<IndexedDocumentResult, Exception>(exception => { Instrumentation.ElasticSearch.IndexingException(exception); return indexSource; })
                 .Publish()
                 .RefCount();
 
@@ -95,12 +100,12 @@ namespace OneCog.Spark.Sparkles
 
         public void OnCompleted()
         {
-            _subject.OnCompleted();
+            // Do nothing
         }
 
         public void OnError(Exception error)
         {
-            _subject.OnError(error);
+            Instrumentation.ElasticSearch.IndexingException(error);
         }
 
         public void OnNext(IDocument value)

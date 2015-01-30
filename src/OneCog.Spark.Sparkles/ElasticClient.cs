@@ -23,9 +23,16 @@ namespace OneCog.Spark.Sparkles
 
         public Fallible<string> Index(string index, string type, string body)
         {
-            var response = _elasticsearchClient.Index(index, type, body);
+            try
+            {
+                var response = _elasticsearchClient.Index(index, type, body);
 
-            return (response.Success) ? Fallible.Success(response.RequestUrl) : Fallible.Fail<string>(new InvalidOperationException(response.ServerError.Error));
+                return (response.Success) ? Fallible.Success(response.RequestUrl) : Fallible.Fail<string>(new InvalidOperationException(response.ServerError.Error));
+            }
+            catch (Exception error)
+            {
+                return Fallible.Fail<string>(error);
+            }
         }
     }
 }

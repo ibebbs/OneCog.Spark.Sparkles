@@ -32,22 +32,18 @@ namespace OneCog.Spark.Sparkles
         {
         }
 
-        private IObservable<IVariable> HandleAndResubscribe(Configuration.IVariable variable, Exception exception, IObservable<IVariable> variableObservable)
+        private IObservable<IDocument> HandleAndResubscribe(Configuration.IVariable variable, Exception exception, IObservable<IDocument> variableObservable)
         {
             Instrumentation.SparkCore.ErrorWhileObservingVariable(variable, exception);
 
             return variableObservable;
         }
 
-        private IObservable<IDocument> CreateObservable(Configuration.ISparkCore settings, IApi sparkApi, Document.IFactory documentFactory, ISchedulerProvider schedulerProvider)
+        private IObservable<IDocument> HandleAndResubscribe(Exception exception, IObservable<IDocument> variableObservable)
         {
-            return Observable.Merge(
-                settings.Devices.SelectMany(
-                    device => device.Variables.Select(
-                        variable => ConstructVariableObservable(sparkApi, documentFactory, schedulerProvider, settings, device, variable)
-                    )
-                )
-            );
+            Instrumentation.SparkCore.ErrorWhileObserving(exception);
+
+            return variableObservable;
         }
 
         private IObservable<IDocument> ConstructVariableObservable(IApi sparkApi, Document.IFactory documentFactory, ISchedulerProvider schedulerProvider, Configuration.ISparkCore settings, Configuration.IDevice device, Configuration.IVariable variable)
@@ -56,13 +52,25 @@ namespace OneCog.Spark.Sparkles
             string type = variable.Type ?? device.DefaultType ?? settings.DefaultType;
             string indexName = variable.IndexName ?? device.DefaultIndexName ?? settings.DefaultIndexName;
 
-            IObservable<IVariable> variableObservable = _sparkApi.ObserveVariable(device.Id, variable.Name, interval).Timeout(TimeSpan.FromTicks(interval.Ticks * 5), schedulerProvider.AsyncScheduler);
+            var observable = _sparkApi
+                .ObserveVariable(device.Id, variable.Name, interval)
+                .Select(sparkVariable => documentFactory.CreateDocument(sparkVariable, indexName, type))
+                .Timeout(TimeSpan.FromTicks(interval.Ticks * 5), schedulerProvider.AsyncScheduler);
 
-            IObservable<IVariable> handledObservable = variableObservable.Catch<IVariable, Exception>(exception => HandleAndResubscribe(variable, exception, variableObservable));
+            return observable.Catch<IDocument, Exception>(exception => HandleAndResubscribe(variable, exception, observable)).Repeat();
+        }
 
-            IObservable<IDocument> projectionObservable = handledObservable.Select(sparkVariable => documentFactory.CreateDocument(sparkVariable, indexName, type));
+        private IObservable<IDocument> CreateObservable(Configuration.ISparkCore settings, IApi sparkApi, Document.IFactory documentFactory, ISchedulerProvider schedulerProvider)
+        {
+            var observable = Observable.Merge(
+                settings.Devices.SelectMany(
+                    device => device.Variables.Select(
+                        variable => ConstructVariableObservable(sparkApi, documentFactory, schedulerProvider, settings, device, variable)
+                    )
+                )
+            );
 
-            return projectionObservable;
+            return observable.Catch<IDocument, Exception>(exception => HandleAndResubscribe(exception, observable)).Repeat();
         }
 
         public IDisposable Subscribe(IObserver<IDocument> observer)

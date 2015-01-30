@@ -48,6 +48,8 @@ namespace OneCog.Spark.Sparkles
 
             Bind<ISparkSource>().To<SparkSource>();
 
+            Bind<IMonitor>().To<Monitor>().InSingletonScope();
+
             Bind<Service>().ToSelf();
             Bind<IService>().ToMethod(context => EventSourceProxy.TracingProxy.Create<IService>(context.Kernel.Get<Service>()));
         }

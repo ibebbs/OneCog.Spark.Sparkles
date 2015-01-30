@@ -119,6 +119,7 @@
     <Compile Include="Fallible.cs" />
     <Compile Include="Instrumentation.cs" />
     <Compile Include="Module.cs" />
+    <Compile Include="Monitor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SchedulerProvider.cs" />

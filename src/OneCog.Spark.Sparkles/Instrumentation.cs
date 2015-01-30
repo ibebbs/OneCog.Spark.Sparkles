@@ -21,6 +21,9 @@ namespace OneCog.Spark.Sparkles
 
         [Event(3, Message = "ErrorWhileObservingVariable", Level = EventLevel.Error)]
         void ErrorWhileObservingVariable(IVariable variable, Exception exception);
+
+        [Event(4, Message = "ErrorWhileObserving", Level = EventLevel.Error)]
+        void ErrorWhileObserving(Exception exception);
     }
 
     [EventSourceImplementation(Name = "OneCog-Spark-Sparkles-ElasticSearch")]
@@ -64,6 +67,16 @@ namespace OneCog.Spark.Sparkles
         private static readonly Lazy<IElasticSearch> _elasticSearch = new Lazy<IElasticSearch>(() => EventSourceImplementer.GetEventSourceAs<IElasticSearch>());
 
         private static readonly Lazy<IConfiguration> _configuration = new Lazy<IConfiguration>(() => EventSourceImplementer.GetEventSourceAs<IConfiguration>());
+
+        static Instrumentation()
+        {
+            TraceParameterProvider.Default
+                .ForAnything()
+                    .With<Exception>()
+                        .Trace(ex => ex.GetType().Name).As("ExceptionType")
+                        .Trace(ex => ex.Message).As("ExceptionMessage")
+                        .Trace(ex => ex.StackTrace).As("ExceptionStackTrace");
+        }
 
         public static ISparkCore SparkCore
         {
