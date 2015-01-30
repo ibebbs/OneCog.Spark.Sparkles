@@ -87,5 +87,39 @@ namespace OneCog.Spark.Sparkles.Tests
 
             A.CallTo(() => elasticClient.Index(index, "documentType", "documentBody")).MustHaveHappened(Repeated.Exactly.Once);
         }
+
+        [Test]
+        public void ShouldContiueToIndexIfIndexerCannotBeFound()
+        {
+            IElasticClient elasticClient = A.Fake<IElasticClient>();
+
+            DateTime indexDate = DateTime.UtcNow;
+            A.CallTo(() => _clock.UtcNow).Returns(indexDate);
+
+            string index = string.Format("{0}-{1}", "tempIndex", indexDate.ToString("yyyy.MM.dd"));
+
+            IDocument document = A.Fake<IDocument>();
+            A.CallTo(() => document.IndexName).Returns("missingIndex");
+            A.CallTo(() => document.Type).Returns("documentType");
+            A.CallTo(() => document.Body).Returns("documentBody");
+
+            A.CallTo(() => elasticClient.Index(index, "documentType", "documentBody")).Returns(Fallible.Success("Test"));
+
+            ElasticSink subject = new ElasticSink(_settings, elasticClient, _clock);
+
+            // Should fail
+            subject.OnNext(document);
+
+            A.CallTo(() => elasticClient.Index(index, "documentType", "documentBody")).MustNotHaveHappened();
+
+            A.CallTo(() => document.IndexName).Returns("tempIndex");
+            A.CallTo(() => document.Type).Returns("documentType");
+            A.CallTo(() => document.Body).Returns("documentBody");
+
+            // Should complete
+            subject.OnNext(document);
+
+            A.CallTo(() => elasticClient.Index(index, "documentType", "documentBody")).MustHaveHappened(Repeated.Exactly.Once);
+        }
     }
 }
