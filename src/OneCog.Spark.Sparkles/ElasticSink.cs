@@ -88,7 +88,7 @@ namespace OneCog.Spark.Sparkles
                 .Select(indexedDocument => new IndexedDocumentResult { Document = indexedDocument.Document, Index = indexedDocument.Index, Result = _elasticClient.Index(indexedDocument.Index, indexedDocument.Document.Type, indexedDocument.Document.Body) });
 
             var handledSource = indexSource
-                .Catch<IndexedDocumentResult, Exception>(exception => { Instrumentation.ElasticSearch.IndexingException(exception); return indexSource; })
+                .Retry(exception => Instrumentation.ElasticSearch.IndexingException(exception))
                 .Publish()
                 .RefCount();
 

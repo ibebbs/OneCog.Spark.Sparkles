@@ -1,13 +1,8 @@
 ﻿using OneCog.Io.Spark;
 using OneCog.Spark.Sparkles.Document;
 using System;
-using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OneCog.Spark.Sparkles
 {
@@ -32,20 +27,6 @@ namespace OneCog.Spark.Sparkles
         {
         }
 
-        private IObservable<IDocument> HandleAndResubscribe(Configuration.IVariable variable, Exception exception, IObservable<IDocument> variableObservable)
-        {
-            Instrumentation.SparkCore.ErrorWhileObservingVariable(variable, exception);
-
-            return variableObservable;
-        }
-
-        private IObservable<IDocument> HandleAndResubscribe(Exception exception, IObservable<IDocument> variableObservable)
-        {
-            Instrumentation.SparkCore.ErrorWhileObserving(exception);
-
-            return variableObservable;
-        }
-
         private IObservable<IDocument> ConstructVariableObservable(IApi sparkApi, Document.IFactory documentFactory, ISchedulerProvider schedulerProvider, Configuration.ISparkCore settings, Configuration.IDevice device, Configuration.IVariable variable)
         {
             TimeSpan interval = variable.Interval ?? device.DefaultInterval ?? settings.DefaultInterval;
@@ -57,7 +38,7 @@ namespace OneCog.Spark.Sparkles
                 .Select(sparkVariable => documentFactory.CreateDocument(sparkVariable, indexName, type))
                 .Timeout(TimeSpan.FromTicks(interval.Ticks * 5), schedulerProvider.AsyncScheduler);
 
-            return observable.Catch<IDocument, Exception>(exception => HandleAndResubscribe(variable, exception, observable)).Repeat();
+            return observable.Retry(exception => Instrumentation.SparkCore.ErrorWhileObservingVariable(variable, exception));
         }
 
         private IObservable<IDocument> CreateObservable(Configuration.ISparkCore settings, IApi sparkApi, Document.IFactory documentFactory, ISchedulerProvider schedulerProvider)
@@ -70,7 +51,7 @@ namespace OneCog.Spark.Sparkles
                 )
             );
 
-            return observable.Catch<IDocument, Exception>(exception => HandleAndResubscribe(exception, observable)).Repeat();
+            return observable.Retry(exception => Instrumentation.SparkCore.ErrorWhileObserving(exception));
         }
 
         public IDisposable Subscribe(IObserver<IDocument> observer)

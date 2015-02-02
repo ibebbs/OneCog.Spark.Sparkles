@@ -113,6 +113,7 @@
   <ItemGroup>
     <Compile Include="ElasticSinkTestFixture.cs" />
     <Compile Include="ModuleTestFixture.cs" />
+    <Compile Include="ObservableExtensionsTestFixture.cs" />
     <Compile Include="SparkSourceTestFixture.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
