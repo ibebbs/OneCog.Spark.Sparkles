@@ -1,5 +1,6 @@
 ﻿using Elasticsearch.Net;
 using Elasticsearch.Net.Connection;
+using OneCog.Io.Spark;
 using OneCog.Spark.Sparkles.Document;
 using System;
 using System.Collections.Generic;
@@ -92,8 +93,8 @@ namespace OneCog.Spark.Sparkles
                 .Publish()
                 .RefCount();
 
-            IDisposable successHandler = handledSource.Where(indexing => indexing.Result.Success).Subscribe(indexing => Instrumentation.ElasticSearch.IndexedDocument(indexing.Document));
-            IDisposable errorHandler = handledSource.Where(indexing => !indexing.Result.Success).Subscribe(indexing => Instrumentation.ElasticSearch.IndexingError(indexing.Document, indexing.Result.Error));
+            IDisposable successHandler = handledSource.Where(indexing => indexing.Result.HasValue).Subscribe(indexing => Instrumentation.ElasticSearch.IndexedDocument(indexing.Document));
+            IDisposable errorHandler = handledSource.Where(indexing => indexing.Result.HasFailed).Subscribe(indexing => Instrumentation.ElasticSearch.IndexingError(indexing.Document, indexing.Result.Exception));
 
             return new CompositeDisposable(successHandler, errorHandler);
         }

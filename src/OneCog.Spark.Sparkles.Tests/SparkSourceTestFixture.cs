@@ -93,9 +93,9 @@ namespace OneCog.Spark.Sparkles.Tests
         [Test]
         public void ShouldSubscribeToAllVariablesForAllDevicesWhenSubscribed()
         {
-            IObservable<IVariable> tempObservable = A.Fake<IObservable<IVariable>>();
-            IObservable<IVariable> lightObservable = A.Fake<IObservable<IVariable>>();
-            IObservable<IVariable> humidityObservable = A.Fake<IObservable<IVariable>>();
+            IObservable<Fallible<IVariable>> tempObservable = A.Fake<IObservable<Fallible<IVariable>>>();
+            IObservable<Fallible<IVariable>> lightObservable = A.Fake<IObservable<Fallible<IVariable>>>();
+            IObservable<Fallible<IVariable>> humidityObservable = A.Fake<IObservable<Fallible<IVariable>>>();
 
             A.CallTo(() => _sparkApi.ObserveVariable("DeviceA", "temp", TimeSpan.FromSeconds(10), null)).Returns(tempObservable);
             A.CallTo(() => _sparkApi.ObserveVariable("DeviceA", "humidity", TimeSpan.FromSeconds(20), null)).Returns(humidityObservable);
@@ -103,22 +103,23 @@ namespace OneCog.Spark.Sparkles.Tests
 
             _subject.Subscribe();
 
-            A.CallTo(() => tempObservable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => lightObservable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
-            A.CallTo(() => humidityObservable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => tempObservable.Subscribe(A<IObserver<Fallible<IVariable>>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => lightObservable.Subscribe(A<IObserver<Fallible<IVariable>>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => humidityObservable.Subscribe(A<IObserver<Fallible<IVariable>>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
         }
 
         [Test]
         public void ShouldUseDocumentFactoryToBuildDocumentWhenVariableEmittedBySubscription()
         {
             IVariable variable = A.Fake<IVariable>();
-            Subject<IVariable> tempObservable = new Subject<IVariable>();
+            Fallible<IVariable> fallible = Fallible.FromValue(variable);
+            Subject<Fallible<IVariable>> tempObservable = new Subject<Fallible<IVariable>>();
 
             A.CallTo(() => _sparkApi.ObserveVariable("DeviceA", "temp", TimeSpan.FromSeconds(10), null)).Returns(tempObservable);
 
             _subject.Subscribe();
 
-            tempObservable.OnNext(variable);
+            tempObservable.OnNext(fallible);
 
             A.CallTo(() => _documentFactory.CreateDocument(variable, A<string>.Ignored, A<string>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
         }
@@ -127,15 +128,17 @@ namespace OneCog.Spark.Sparkles.Tests
         public void ShouldEmitDocumentWhenVariableEmittedBySubscription()
         {
             IVariable variable = A.Fake<IVariable>();
+            Fallible<IVariable> fallible = Fallible.FromValue(variable);
+
             List<IDocument> documents = new List<IDocument>();
 
-            Subject<IVariable> tempObservable = new Subject<IVariable>();
+            Subject<Fallible<IVariable>> tempObservable = new Subject<Fallible<IVariable>>();
 
             A.CallTo(() => _sparkApi.ObserveVariable("DeviceA", "temp", TimeSpan.FromSeconds(10), null)).Returns(tempObservable);
 
             _subject.Subscribe(documents.Add);
 
-            tempObservable.OnNext(variable);
+            tempObservable.OnNext(fallible);
 
             Assert.That(documents.Count, Is.EqualTo(1));
         }
@@ -144,32 +147,34 @@ namespace OneCog.Spark.Sparkles.Tests
         public void ShouldResubscribeAfterAnErrorObservingVariable()
         {
             IVariable variable = A.Fake<IVariable>();
-            List<IDocument> documents = new List<IDocument>();
-            
-            IObserver<IVariable> observer = null;
-            IObservable<IVariable> observable = A.Fake<IObservable<IVariable>>();
+            Fallible<IVariable> fallible = Fallible.FromValue(variable);
 
-            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).Invokes(call => observer = call.GetArgument<IObserver<IVariable>>(0));
+            List<IDocument> documents = new List<IDocument>();
+
+            IObserver<Fallible<IVariable>> observer = null;
+            IObservable<Fallible<IVariable>> observable = A.Fake<IObservable<Fallible<IVariable>>>();
+
+            A.CallTo(() => observable.Subscribe(A<IObserver<Fallible<IVariable>>>.Ignored)).Invokes(call => observer = call.GetArgument<IObserver<Fallible<IVariable>>>(0));
 
             A.CallTo(() => _sparkApi.ObserveVariable("DeviceA", "temp", TimeSpan.FromSeconds(10), null)).Returns(observable);
 
             _subject.Subscribe(documents.Add);
 
-            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observable.Subscribe(A<IObserver<Fallible<IVariable>>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
 
             Assert.That(observer, Is.Not.Null);
 
-            observer.OnNext(variable);
+            observer.OnNext(fallible);
 
             Assert.That(documents.Count, Is.EqualTo(1));
 
             observer.OnError(new TimeoutException());
 
-            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Twice);
+            A.CallTo(() => observable.Subscribe(A<IObserver<Fallible<IVariable>>>.Ignored)).MustHaveHappened(Repeated.Exactly.Twice);
 
             Assert.That(observer, Is.Not.Null);
 
-            observer.OnNext(variable);
+            observer.OnNext(fallible);
 
             Assert.That(documents.Count, Is.EqualTo(2));
         }
@@ -178,39 +183,41 @@ namespace OneCog.Spark.Sparkles.Tests
         public void ShouldResubscribeAfterNotReceivingAnValueAfterFiveTimesTheInterval()
         {
             IVariable variable = A.Fake<IVariable>();
+            Fallible<IVariable> fallible = Fallible.FromValue(variable);
+
             List<IDocument> documents = new List<IDocument>();
 
-            IObserver<IVariable> observer = null;
-            IObservable<IVariable> observable = A.Fake<IObservable<IVariable>>();
+            IObserver<Fallible<IVariable>> observer = null;
+            IObservable<Fallible<IVariable>> observable = A.Fake<IObservable<Fallible<IVariable>>>();
 
-            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).Invokes(call => observer = call.GetArgument<IObserver<IVariable>>(0));
+            A.CallTo(() => observable.Subscribe(A<IObserver<Fallible<IVariable>>>.Ignored)).Invokes(call => observer = call.GetArgument<IObserver<Fallible<IVariable>>>(0));
 
             A.CallTo(() => _sparkApi.ObserveVariable("DeviceA", "temp", TimeSpan.FromSeconds(10), null)).Returns(observable);
 
             _subject.Subscribe(documents.Add);
 
-            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observable.Subscribe(A<IObserver<Fallible<IVariable>>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
 
             Assert.That(observer, Is.Not.Null);
 
-            observer.OnNext(variable);
+            observer.OnNext(fallible);
 
             Assert.That(documents.Count, Is.EqualTo(1));
 
             _testScheduler.AdvanceBy(TimeSpan.FromSeconds(10).Ticks);
-            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observable.Subscribe(A<IObserver<Fallible<IVariable>>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
             _testScheduler.AdvanceBy(TimeSpan.FromSeconds(10).Ticks);
-            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observable.Subscribe(A<IObserver<Fallible<IVariable>>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
             _testScheduler.AdvanceBy(TimeSpan.FromSeconds(10).Ticks);
-            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observable.Subscribe(A<IObserver<Fallible<IVariable>>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
             _testScheduler.AdvanceBy(TimeSpan.FromSeconds(10).Ticks);
-            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
+            A.CallTo(() => observable.Subscribe(A<IObserver<Fallible<IVariable>>>.Ignored)).MustHaveHappened(Repeated.Exactly.Once);
             _testScheduler.AdvanceBy(TimeSpan.FromSeconds(10).Ticks);
-            A.CallTo(() => observable.Subscribe(A<IObserver<IVariable>>.Ignored)).MustHaveHappened(Repeated.Exactly.Twice);
+            A.CallTo(() => observable.Subscribe(A<IObserver<Fallible<IVariable>>>.Ignored)).MustHaveHappened(Repeated.Exactly.Twice);
 
             Assert.That(observer, Is.Not.Null);
 
-            observer.OnNext(variable);
+            observer.OnNext(fallible);
 
             Assert.That(documents.Count, Is.EqualTo(2));
         }

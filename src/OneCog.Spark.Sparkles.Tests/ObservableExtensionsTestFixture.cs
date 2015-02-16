@@ -72,5 +72,29 @@ namespace OneCog.Spark.Sparkles.Tests
                 A.CallTo(() => values.OnNext(314)).MustHaveHappened(Repeated.Exactly.Once);
             }
         }
+
+        public class ZipLatestShould
+        {
+            [Test]
+            public void NotEmitUnitBothSourcesHaveProducedAValue()
+            {
+                Subject<int> source1 = new Subject<int>();
+                Subject<int> source2 = new Subject<int>();
+
+                List<Tuple<int,int>> actual = new List<Tuple<int,int>>();
+                Tuple<int,int> expected = Tuple.Create(3, 1);
+
+                using (IDisposable subscription = ObservableExtensions.ZipLatest(source1, source2, Tuple.Create).Subscribe(actual.Add))
+                {
+                    source1.OnNext(1);
+                    source1.OnNext(2);
+                    source1.OnNext(3);
+                    source2.OnNext(1);
+                }
+
+                Assert.That(actual.Count, Is.EqualTo(1));
+                Assert.That(actual[0], Is.EqualTo(expected));
+            }
+        }
     }
 }

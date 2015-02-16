@@ -2,7 +2,9 @@
 using OneCog.Spark.Sparkles.Document;
 using System;
 using System.Linq;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 
 namespace OneCog.Spark.Sparkles
 {
@@ -29,16 +31,35 @@ namespace OneCog.Spark.Sparkles
 
         private IObservable<IDocument> ConstructVariableObservable(IApi sparkApi, Document.IFactory documentFactory, ISchedulerProvider schedulerProvider, Configuration.ISparkCore settings, Configuration.IDevice device, Configuration.IVariable variable)
         {
-            TimeSpan interval = variable.Interval ?? device.DefaultInterval ?? settings.DefaultInterval;
-            string type = variable.Type ?? device.DefaultType ?? settings.DefaultType;
-            string indexName = variable.IndexName ?? device.DefaultIndexName ?? settings.DefaultIndexName;
+            return Observable.Create<IDocument>(
+                observer =>
+                {
+                    TimeSpan interval = variable.Interval ?? device.DefaultInterval ?? settings.DefaultInterval;
+                    string type = variable.Type ?? device.DefaultType ?? settings.DefaultType;
+                    string indexName = variable.IndexName ?? device.DefaultIndexName ?? settings.DefaultIndexName;
 
-            var observable = _sparkApi
-                .ObserveVariable(device.Id, variable.Name, interval)
-                .Select(sparkVariable => documentFactory.CreateDocument(sparkVariable, indexName, type))
-                .Timeout(TimeSpan.FromTicks(interval.Ticks * 5), schedulerProvider.AsyncScheduler);
+                    IConnectableObservable<Fallible<IVariable>> observable = _sparkApi
+                        .ObserveVariable(device.Id, variable.Name, interval)
+                        .Timeout(TimeSpan.FromTicks(interval.Ticks * 5), schedulerProvider.AsyncScheduler)
+                        .Retry(exception => Instrumentation.SparkCore.UnhandledErrorWhileObservingVariable(variable, exception))
+                        .Publish();
 
-            return observable.Retry(exception => Instrumentation.SparkCore.ErrorWhileObservingVariable(variable, exception));
+                    IDisposable documentSubscription = observable
+                        .Where(fallible => fallible.HasValue)
+                        .Select(sparkVariable => documentFactory.CreateDocument(sparkVariable.Value, indexName, type))
+                        .Subscribe(observer);
+
+                    IDisposable failedSubscription = observable
+                        .Where(fallible => fallible.HasFailed)
+                        .Subscribe(fallible => Instrumentation.SparkCore.HandledErrorWhileObservingVariable(variable, fallible.Exception));
+
+                    return new CompositeDisposable(
+                        documentSubscription,
+                        failedSubscription,
+                        observable.Connect()
+                    );
+                }
+            );
         }
 
         private IObservable<IDocument> CreateObservable(Configuration.ISparkCore settings, IApi sparkApi, Document.IFactory documentFactory, ISchedulerProvider schedulerProvider)

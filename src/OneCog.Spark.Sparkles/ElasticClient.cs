@@ -1,4 +1,5 @@
 ﻿using Elasticsearch.Net;
+using OneCog.Io.Spark;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,11 +28,11 @@ namespace OneCog.Spark.Sparkles
             {
                 var response = _elasticsearchClient.Index(index, type, body);
 
-                return (response.Success) ? Fallible.Success(response.RequestUrl) : Fallible.Fail<string>(new InvalidOperationException(response.ServerError.Error));
+                return (response.Success) ? Fallible.FromValue(response.RequestUrl) : Fallible.FromException<string>(new InvalidOperationException(response.ServerError.Error));
             }
             catch (Exception error)
             {
-                return Fallible.Fail<string>(error);
+                return Fallible.FromException<string>(error);
             }
         }
     }

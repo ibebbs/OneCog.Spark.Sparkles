@@ -2,6 +2,7 @@
 using Elasticsearch.Net.Connection;
 using FakeItEasy;
 using NUnit.Framework;
+using OneCog.Io.Spark;
 using OneCog.Spark.Sparkles.Document;
 using System;
 using System.Collections.Generic;
@@ -55,7 +56,7 @@ namespace OneCog.Spark.Sparkles.Tests
             A.CallTo(() => document.Type).Returns("documentType");
             A.CallTo(() => document.Body).Returns("documentBody");
 
-            A.CallTo(() => elasticClient.Index("humidityIndex", "documentType", "documentBody")).Returns(Fallible.Success("Test"));
+            A.CallTo(() => elasticClient.Index("humidityIndex", "documentType", "documentBody")).Returns(Fallible.FromValue("Test"));
 
             ElasticSink subject = new ElasticSink(_settings, elasticClient, _clock);
 
@@ -79,7 +80,7 @@ namespace OneCog.Spark.Sparkles.Tests
             A.CallTo(() => document.Type).Returns("documentType");
             A.CallTo(() => document.Body).Returns("documentBody");
 
-            A.CallTo(() => elasticClient.Index(index, "documentType", "documentBody")).Returns(Fallible.Success("Test"));
+            A.CallTo(() => elasticClient.Index(index, "documentType", "documentBody")).Returns(Fallible.FromValue("Test"));
 
             ElasticSink subject = new ElasticSink(_settings, elasticClient, _clock);
 
@@ -103,7 +104,7 @@ namespace OneCog.Spark.Sparkles.Tests
             A.CallTo(() => document.Type).Returns("documentType");
             A.CallTo(() => document.Body).Returns("documentBody");
 
-            A.CallTo(() => elasticClient.Index(index, "documentType", "documentBody")).Returns(Fallible.Success("Test"));
+            A.CallTo(() => elasticClient.Index(index, "documentType", "documentBody")).Returns(Fallible.FromValue("Test"));
 
             ElasticSink subject = new ElasticSink(_settings, elasticClient, _clock);
 

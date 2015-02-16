@@ -19,11 +19,14 @@ namespace OneCog.Spark.Sparkles
         [Event(2, Message = "StopObservingVariable", Level = EventLevel.Informational)]
         void StopObservingVariable(IVariable variable);
 
-        [Event(3, Message = "ErrorWhileObservingVariable", Level = EventLevel.Error)]
-        void ErrorWhileObservingVariable(IVariable variable, Exception exception);
+        [Event(3, Message = "UnhandledErrorWhileObservingVariable", Level = EventLevel.Error)]
+        void UnhandledErrorWhileObservingVariable(IVariable variable, Exception exception);
 
         [Event(4, Message = "ErrorWhileObserving", Level = EventLevel.Error)]
         void ErrorWhileObserving(Exception exception);
+
+        [Event(5, Message = "HandledErrorWhileObservingVariable", Level = EventLevel.Warning)]
+        object HandledErrorWhileObservingVariable(IVariable variable, Exception exception);
     }
 
     [EventSourceImplementation(Name = "OneCog-Spark-Sparkles-ElasticSearch")]

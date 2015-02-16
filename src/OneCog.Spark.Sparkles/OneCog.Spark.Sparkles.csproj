@@ -60,10 +60,11 @@
     </Reference>
     <Reference Include="OneCog.Io.Spark, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\OneCog.Io.Spark.1.0.0.11\lib\portable-net45+win+wpa81+wp80\OneCog.Io.Spark.dll</HintPath>
+      <HintPath>..\packages\OneCog.Io.Spark.1.0.0.14\lib\portable-net45+win+wpa81+wp80\OneCog.Io.Spark.dll</HintPath>
     </Reference>
-    <Reference Include="OneCog.Io.Spark.Ninject">
-      <HintPath>..\packages\OneCog.Io.Spark.Ninject.1.0.0.10\lib\net45\OneCog.Io.Spark.Ninject.dll</HintPath>
+    <Reference Include="OneCog.Io.Spark.Ninject, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\OneCog.Io.Spark.Ninject.1.0.0.14\lib\net45\OneCog.Io.Spark.Ninject.dll</HintPath>
     </Reference>
     <Reference Include="SimpleConfig">
       <HintPath>..\packages\SimpleConfig.1.0.33.0\lib\SimpleConfig.dll</HintPath>
@@ -116,7 +117,6 @@
     <Compile Include="Document\ForVariable.cs" />
     <Compile Include="ElasticClient.cs" />
     <Compile Include="ElasticSink.cs" />
-    <Compile Include="Fallible.cs" />
     <Compile Include="Instrumentation.cs" />
     <Compile Include="Module.cs" />
     <Compile Include="Monitor.cs" />
